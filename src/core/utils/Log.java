@@ -1,9 +1,9 @@
-package Core.utils;
+package core.utils;
 
 import java.util.HashMap;
 
-import static Core.Main.getUsingLogs;
-import static Core.utils.Constants.logConstants.*;
+import static core.Main.getUsingLogs;
+import static core.utils.Constants.logConstants.*;
 
 public class Log {
 

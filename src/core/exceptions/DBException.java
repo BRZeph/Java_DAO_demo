@@ -1,4 +1,4 @@
-package Core.exceptions;
+package core.exceptions;
 
 public class DBException extends RuntimeException {
 

@@ -1,4 +1,4 @@
-package Core.utils;
+package core.utils;
 
 public class Constants {
 

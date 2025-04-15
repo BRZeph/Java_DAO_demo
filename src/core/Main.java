@@ -1,10 +1,11 @@
-package Core;
+package core;
 
-import Core.utils.Log;
+import core.utils.Log;
+import demo01.Program;
 
 import java.util.List;
 
-import static Core.utils.Constants.logConstants.*;
+import static core.utils.Constants.logConstants.*;
 
 public class Main {
 
@@ -17,10 +18,12 @@ public class Main {
                 DB
         );
 
+        DBConnections.getConnection();
+
         Log.printAllLogs();
     }
 
     public static List<String> getUsingLogs() {
-        return usingLogs;
+        return Program.usingLogs; // Colocar programa a ser executado com usingLogs aqui.
     }
 }
