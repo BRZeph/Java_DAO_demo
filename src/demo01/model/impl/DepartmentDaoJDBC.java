@@ -5,42 +5,35 @@ import core.exceptions.DBException;
 import core.exceptions.DBExceptionsCode;
 import core.utils.Constants;
 import core.utils.Log;
-import demo01.model.dao.SellerDao;
+import demo01.model.dao.DepartmentDao;
 import demo01.model.entities.Department;
-import demo01.model.entities.Seller;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static demo01.model.impl.DepartmentDaoJDBC.instantiateDepartment;
-
-public class SellerDaoJDBC implements SellerDao {
+public class DepartmentDaoJDBC implements DepartmentDao {
 
     private Connection conn;
 
-    public SellerDaoJDBC(Connection conn) {
+    public DepartmentDaoJDBC(Connection conn) {
         this.conn = conn;
     }
 
     @Override
-    public void insert(Seller obj) {
+    public void insert(Department obj) {
         PreparedStatement ps = null;
 
         try {
             ps = conn.prepareStatement(
-                    "INSERT INTO seller " +
-                            "(Name, Email, BirthDay, BaseSalary, DepartmentId) " +
+                    "INSERT INTO department " +
+                            "(Name) " +
                             "VALUES " +
-                            "(?, ?, ?, ?, ?)",
+                            "(?)",
                     Statement.RETURN_GENERATED_KEYS
             );
 
             ps.setString(1, obj.getName());
-            ps.setString(2, obj.getEmail());
-            ps.setDate(3, new Date(obj.getBirthday().getTime()));
-            ps.setDouble(4, obj.getBaseSalary());
-            ps.setInt(5, obj.getDepartment().getId());
 
             int rowsAffected = ps.executeUpdate();
 
@@ -71,23 +64,19 @@ public class SellerDaoJDBC implements SellerDao {
     }
 
     @Override
-    public void update(Seller obj) {
+    public void update(Department obj) {
         PreparedStatement ps = null;
 
         try {
             ps = conn.prepareStatement(
-                    "UPDATE seller " +
-                            "SET Name = ?, Email = ?, BirthDay = ?, BaseSalary = ?, DepartmentId = ? " +
+                    "UPDATE department " +
+                            "SET Name = ? " +
                             "WHERE Id = ? ",
                     Statement.RETURN_GENERATED_KEYS
             );
 
             ps.setString(1, obj.getName());
-            ps.setString(2, obj.getEmail());
-            ps.setDate(3, new Date(obj.getBirthday().getTime()));
-            ps.setDouble(4, obj.getBaseSalary());
-            ps.setInt(5, obj.getDepartment().getId());
-            ps.setInt(6, obj.getId());
+            ps.setInt(2, obj.getId());
 
             Log.registerLog(Constants.logConstants.DB, "Attempting to update object " + obj);
 
@@ -104,7 +93,7 @@ public class SellerDaoJDBC implements SellerDao {
             } else if (rowsAffected == 0) {
                 Log.registerLog(Constants.logConstants.DB, "Could not find object with id " + obj.getId() + " to update");
             } else {
-                Log.registerLog(Constants.logConstants.DB, "Failed to update object " + obj.getId());
+                Log.registerLog(Constants.logConstants.DB, "Failed to delete object " + obj.getId());
                 Log.registerLog(Constants.logConstants.DB,
                         "Error code " + DBExceptionsCode.errorNumber.DB_GENERIC_ERROR +
                                 ", error message: " + DBExceptionsCode.errorLogMessage.DB_GENERIC_ERROR_LOG);
@@ -122,7 +111,7 @@ public class SellerDaoJDBC implements SellerDao {
         PreparedStatement ps = null;
         try {
             ps = conn.prepareStatement(
-                    "DELETE FROM seller " +
+                    "DELETE FROM department " +
                             "WHERE Id = ?"
             );
 
@@ -157,23 +146,16 @@ public class SellerDaoJDBC implements SellerDao {
     }
 
     @Override
-    public Seller findById(Integer id) {
+    public Department findById(Integer id) {
         PreparedStatement ps = null;
         ResultSet rs = null;
         try{
             ps = conn.prepareStatement(
                     "SELECT " +
-                            "seller.Id AS SellerId, " +
-                            "seller.Name AS SellerName, " +
-                            "seller.Email AS SellerEmail, " +
-                            "seller.Birthday AS SellerBirthday, " +
-                            "seller.BaseSalary AS SellerBaseSalary, " +
-                            "seller.DepartmentId AS SellerDepartmentId, " +
                             "department.Id AS DepartmentId, " +
                             "department.Name AS DepartmentName " +
-                            "FROM seller " +
-                            "INNER JOIN department ON seller.DepartmentId = department.Id " +
-                            "WHERE seller.Id = ?"
+                            "FROM department " +
+                            "WHERE department.Id = ?"
             );
 
             ps.setInt(1, id);
@@ -182,9 +164,8 @@ public class SellerDaoJDBC implements SellerDao {
 
             if (rs.next()) {
                 Department dep = instantiateDepartment(rs);
-                Seller seller = instantiateSeller(rs, dep);
-                Log.registerLog(Constants.logConstants.DB, "Found: " + seller);
-                return seller;
+                Log.registerLog(Constants.logConstants.DB, "Found: " + dep);
+                return dep;
             }
             Log.registerLog(Constants.logConstants.DB, "Did not find Id: " + id);
             return null;
@@ -200,50 +181,30 @@ public class SellerDaoJDBC implements SellerDao {
     }
 
     @Override
-    public List<Seller> findAll() {
+    public List<Department> findAll() {
         PreparedStatement ps = null;
         ResultSet rs = null;
         try{
             ps = conn.prepareStatement(
                     "SELECT " +
-                            "seller.Id AS SellerId, " +
-                            "seller.Name AS SellerName, " +
-                            "seller.Email AS SellerEmail, " +
-                            "seller.Birthday AS SellerBirthday, " +
-                            "seller.BaseSalary AS SellerBaseSalary, " +
-                            "seller.DepartmentId AS SellerDepartmentId, " +
                             "department.Id AS DepartmentId, " +
                             "department.Name AS DepartmentName " +
-                            "FROM seller " +
-                            "INNER JOIN department " +
-                            "ON seller.DepartmentId = department.Id " +
-                            "ORDER BY seller.Name"
+                            "FROM department " +
+                            "ORDER BY department.Id ASC"
             );
             rs = ps.executeQuery();
             Log.registerLog(Constants.logConstants.DB,
                     "Executing findAll on " + this.getClass().getSimpleName());
 
-            List<Seller> depList = new ArrayList<>();
+            List<Department> depList = new ArrayList<>();
 
             if (rs.isBeforeFirst()) {
-                Department dep = null;
-                int count = 0;
 
                 while (rs.next()) {
-                    if (dep == null) {
-                        dep = instantiateDepartment(rs);
-                    } else if (dep.getId() != instantiateDepartment(rs).getId()) {
-                        Log.registerLog(Constants.logConstants.DB, "Found " + count + " entries for department: " + dep);
-                        dep = instantiateDepartment(rs);
-                        count = 0;
-                    }
-                    count++;
-                    Seller seller = instantiateSeller(rs, dep);
-                    depList.add(seller);
-                    Log.registerLog(Constants.logConstants.DB, "Found seller: " + seller);
+                    Department dep = instantiateDepartment(rs);
+                    depList.add(dep);
+                    Log.registerLog(Constants.logConstants.DB, "Found department: " + dep);
                 }
-
-                Log.registerLog(Constants.logConstants.DB, "Found " + count + " entries for department: " + dep);
                 Log.registerLog(Constants.logConstants.DB, "Found " + depList.size() + " entries");
 
                 return depList;
@@ -262,69 +223,10 @@ public class SellerDaoJDBC implements SellerDao {
         }
     }
 
-    @Override
-    public List<Seller> findByDepartment(Department department) {
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        try{
-            ps = conn.prepareStatement(
-                    "SELECT " +
-                            "seller.Id AS SellerId, " +
-                            "seller.Name AS SellerName, " +
-                            "seller.Email AS SellerEmail, " +
-                            "seller.Birthday AS SellerBirthday, " +
-                            "seller.BaseSalary AS SellerBaseSalary, " +
-                            "seller.DepartmentId AS SellerDepartmentId, " +
-                            "department.Id AS DepartmentId, " +
-                            "department.Name AS DepartmentName " +
-                            "FROM seller " +
-                            "INNER JOIN department " +
-                            "ON seller.DepartmentId = department.Id " +
-                            "WHERE seller.DepartmentId = ? " +
-                            "ORDER BY seller.Name"
-            );
-            ps.setInt(1, department.getId());
-            rs = ps.executeQuery();
-            Log.registerLog(Constants.logConstants.DB,
-                    "Executing findByDepartment with department: " + department.getId());
-
-            List<Seller> depList = new ArrayList<>();
-
-            if (rs.isBeforeFirst()) {
-                Department dep = null;
-
-                while (rs.next()) {
-                    if (dep == null) {
-                        dep = instantiateDepartment(rs);
-                    }
-                    Seller seller = instantiateSeller(rs, dep);
-                    depList.add(seller);
-                    Log.registerLog(Constants.logConstants.DB, "Found seller: " + seller);
-                }
-
-                Log.registerLog(Constants.logConstants.DB, "Found " + depList.size() + " entries");
-
-                return depList;
-            } else {
-                Log.registerLog(Constants.logConstants.DB, "Did not find entries");
-                return null;
-            }
-        } catch (SQLException e) {
-            throw new DBException(e.getMessage());
-        } finally {
-            DBConnections.closeStatement(ps);
-            DBConnections.closeResultSet(rs);
-        }
-    }
-
-    protected static Seller instantiateSeller(ResultSet rs, Department dep) throws SQLException {
-        Seller seller = new Seller();
-        seller.setId(rs.getInt("SellerId"));
-        seller.setName(rs.getString("SellerName"));
-        seller.setEmail(rs.getString("SellerEmail"));
-        seller.setBirthday(rs.getDate("SellerBirthday"));
-        seller.setBaseSalary(rs.getDouble("SellerBaseSalary"));
-        seller.setDepartment(dep);
-        return seller;
+    protected static Department instantiateDepartment(ResultSet rs) throws SQLException {
+        Department dep = new Department();
+        dep.setId(rs.getInt("DepartmentId"));
+        dep.setName(rs.getString("DepartmentName"));
+        return dep;
     }
 }
